@@ -7,19 +7,31 @@
 
 import Foundation
 
+let COORD: simd_float1 = 16.0
+
 class Rectangle: Shape {
-    internal var scale: Vector2
-    internal var rotation: Float
+    internal var transform: Transform2D
+    internal var color: Color
     internal var vertices: [Vertex]
     
     init(
-        scale: Vector2 = Vector2(x: 1, y: 1),
-        rotation: Float = 0,
-        vertices: [Vertex]
+        transform: Transform2D = Transform2D(position: Vector2(0, 0), scale: Vector2(1, 1), rotation: 0),
+        color: Color = Color(255, 255, 255, 1)
     ) {
-        self.scale = scale
-        self.rotation = rotation
-        self.vertices = vertices
+        self.transform = transform
+        self.color = color
+        
+        let x = transform.position.x
+        let y = transform.position.y
+        self.vertices = [
+            Vertex(position: [x - SHAPE_SIZE / 2, y + SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD, COORD]),
+            Vertex(position: [x + SHAPE_SIZE / 2, y + SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD * 2, COORD]),
+            Vertex(position: [x + SHAPE_SIZE / 2, y - SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD * 2, COORD * 2]),
+            
+            Vertex(position: [x - SHAPE_SIZE / 2, y + SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD, COORD]),
+            Vertex(position: [x - SHAPE_SIZE / 2, y - SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD, COORD * 2]),
+            Vertex(position: [x + SHAPE_SIZE / 2, y - SHAPE_SIZE / 2], color: color.toRGBA(), textureCoordinates: [COORD * 2, COORD * 2]),
+        ]
     }
     
     private func applyScale(scale: Vector2, vertices: [Vertex]) -> ([Vertex]) {
@@ -45,15 +57,15 @@ class Rectangle: Shape {
     }
     
     public func setScale(scale: Vector2) {
-        self.scale = scale
+        self.transform.scale = scale
     }
     
     public func setRotation(angle: Float) {
-        self.rotation = angle
+        self.transform.rotation = angle
     }
     
-    public func render() -> ([Vertex]) {
-        return applyRotation(angle: self.rotation, vertices: applyScale(scale: self.scale, vertices: self.vertices))
+    public func render(screenSize: Vector2) -> ([Vertex]) {
+        return applyRotation(angle: self.transform.rotation, vertices: applyScale(scale: self.transform.scale, vertices: self.vertices))
     }
     
 }

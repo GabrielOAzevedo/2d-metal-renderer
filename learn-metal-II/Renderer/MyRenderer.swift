@@ -7,6 +7,7 @@
 
 import Metal
 import MetalKit
+import AppKit
 
 class MyRenderer: NSObject, MTKViewDelegate {
     let device: MTLDevice
@@ -17,23 +18,15 @@ class MyRenderer: NSObject, MTKViewDelegate {
     
     var lastRenderTime: CFTimeInterval? = nil
     var currentTime: Double = 0
+    var screenSize: Vector2
     
-    var shapes: [Shape] = [Rectangle(scale: Vector2(x: 0.5, y: 0.5), rotation: 0, vertices: [
-        Vertex(position: [-1, 1], color: [1, 0, 0, 1]),
-        Vertex(position: [1, 1], color: [1, 0, 0, 1]),
-        Vertex(position: [1, -1], color: [1, 0, 0, 1]),
-        Vertex(position: [-1, 1], color: [1, 0, 0, 1]),
-        Vertex(position: [-1, -1], color: [1, 0, 0, 1]),
-        Vertex(position: [1, -1], color: [1, 0, 0, 1]),
-    ]), Triangle(scale: Vector2(x: 0.5, y: 0.5), rotation: 0, vertices: [
-        Vertex(position: [-1, -1], color: [1, 0, 0, 1]),
-        Vertex(position: [1, -1], color: [0, 1, 0, 1]),
-        Vertex(position: [0, 1], color: [0, 0, 1, 1])
-    ])]
+    var shapes: [Shape] = [Rectangle(transform: Transform2D(position: Vector2(128, 128), scale: Vector2(1, 1), rotation: 0))]
+    var texture: MTLTexture
     
     init?(mtkView: MTKView) {
         device = mtkView.device!
         commandQueue = device.makeCommandQueue()!
+        screenSize = Vector2(Float(mtkView.currentDrawable!.texture.width), Float(mtkView.currentDrawable!.texture.height))
         
         do {
             pipelineState = try MyRenderer.buildRenderPipelineWith(device: device, metalKitView: mtkView)
@@ -42,15 +35,16 @@ class MyRenderer: NSObject, MTKViewDelegate {
             return nil
         }
         
-        var initialUniforms = Uniforms(brightness: 1, currentTime: Float(currentTime))
+        var initialUniforms = Uniforms(brightness: 1, currentTime: Float(currentTime), screen: simd_float2(x: screenSize.x, y: screenSize.y))
         uniformsBuffer = device.makeBuffer(bytes: &initialUniforms, length: MemoryLayout<Uniforms>.stride)!
+        
+        let loader = MTKTextureLoader(device: device)
+        texture = try! loader.newTexture(name: "colored_packed", scaleFactor: 1.0, bundle: nil)
     }
     
     func draw(in view: MTKView) {
         GPULock.wait()
-        let timeDiff = updateTime()
-        updateUniforms(dt: timeDiff)
-        updateVertices(dt: timeDiff)
+        update(view: view)
         guard let commandBuffer = commandQueue.makeCommandBuffer() else {
             return
         }
@@ -60,33 +54,37 @@ class MyRenderer: NSObject, MTKViewDelegate {
         }
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1)
         
-        guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-            return
-        }
+        renderVertices(commandBuffer: commandBuffer, renderPassDescriptor: renderPassDescriptor, view: view)
         
-        let shapesVertexMap: [Vertex] = shapes.reduce([], {acc, shape in
-            var newAcc = acc
-            newAcc.append(contentsOf: shape.render())
-            return newAcc
-        })
-        let vertexBuffer = device.makeBuffer(bytes: shapesVertexMap, length: shapesVertexMap.count * MemoryLayout<Vertex>.stride)!
-        
-        renderEncoder.setRenderPipelineState(pipelineState)
-        renderEncoder.setVertexBuffer(uniformsBuffer, offset: 0, index: 0)
-        renderEncoder.setFragmentBuffer(uniformsBuffer, offset: 0, index: 0)
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 1)
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: shapesVertexMap.count)
-        renderEncoder.endEncoding()
-        
-        commandBuffer.present(view.currentDrawable!)
         commandBuffer.addCompletedHandler { _ in
             self.GPULock.signal()
         }
         commandBuffer.commit()
     }
     
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
+    
+    func renderVertices(commandBuffer: MTLCommandBuffer, renderPassDescriptor: MTLRenderPassDescriptor, view: MTKView) {
+        let shapesVertexMap: [Vertex] = shapes.reduce([], {acc, shape in
+            var newAcc = acc
+            newAcc.append(contentsOf: shape.render(screenSize: screenSize))
+            return newAcc
+        })
+        let vertexBuffer = device.makeBuffer(bytes: shapesVertexMap, length: shapesVertexMap.count * MemoryLayout<Vertex>.stride)!
         
+        guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+            return
+        }
+        
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(uniformsBuffer, offset: 0, index: 0)
+        renderEncoder.setFragmentBuffer(uniformsBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: shapesVertexMap.count)
+        renderEncoder.endEncoding()
+        
+        commandBuffer.present(view.currentDrawable!)
     }
     
     class func buildRenderPipelineWith(device: MTLDevice, metalKitView: MTKView) throws -> MTLRenderPipelineState {
@@ -97,6 +95,12 @@ class MyRenderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.colorAttachments[0].pixelFormat = metalKitView.colorPixelFormat
         
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+    }
+    
+    func update(view: MTKView) {
+        let timeDiff = updateTime()
+        updateUniforms(dt: timeDiff)
+        updateScreenSize(view: view)
     }
     
     func updateTime() -> Double {
@@ -110,14 +114,10 @@ class MyRenderer: NSObject, MTKViewDelegate {
         let ptr = uniformsBuffer.contents().bindMemory(to: Uniforms.self, capacity: 1)
         currentTime += dt
         ptr.pointee.currentTime = Float(currentTime)
+        ptr.pointee.screen = simd_float2(x: screenSize.x, y: screenSize.y)
     }
     
-    func updateVertices(dt: CFTimeInterval) {
-        let scale = Float(0.1 * cos(currentTime) + 0.8)
-        let rotation = Float(currentTime / 3.14)
-        shapes.forEach{ shape in
-            shape.setRotation(angle: rotation)
-            shape.setScale(scale: Vector2(x: scale, y: scale))
-        }
+    func updateScreenSize(view: MTKView) {
+        screenSize = Vector2(Float(view.currentDrawable!.texture.width), Float(view.currentDrawable!.texture.height))
     }
 }

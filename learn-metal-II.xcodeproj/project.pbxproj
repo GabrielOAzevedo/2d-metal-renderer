@@ -18,6 +18,9 @@
 		23F98ADF2B1CB2A40063E484 /* Triangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F98ADE2B1CB2A40063E484 /* Triangle.swift */; };
 		23F98AE12B1CC18A0063E484 /* Shape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F98AE02B1CC18A0063E484 /* Shape.swift */; };
 		23F98AE32B1CC5BA0063E484 /* Rectangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F98AE22B1CC5BA0063E484 /* Rectangle.swift */; };
+		23F98AE52B1D4E9A0063E484 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F98AE42B1D4E9A0063E484 /* Color.swift */; };
+		23F98AEC2B1E87F80063E484 /* colored_packed.png in Resources */ = {isa = PBXBuildFile; fileRef = 23F98AEB2B1E87F80063E484 /* colored_packed.png */; };
+		23F98AEF2B1F1CFC0063E484 /* TextureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F98AEE2B1F1CFC0063E484 /* TextureData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +39,9 @@
 		23F98ADE2B1CB2A40063E484 /* Triangle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Triangle.swift; sourceTree = "<group>"; };
 		23F98AE02B1CC18A0063E484 /* Shape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shape.swift; sourceTree = "<group>"; };
 		23F98AE22B1CC5BA0063E484 /* Rectangle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rectangle.swift; sourceTree = "<group>"; };
+		23F98AE42B1D4E9A0063E484 /* Color.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
+		23F98AEB2B1E87F80063E484 /* colored_packed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = colored_packed.png; sourceTree = "<group>"; };
+		23F98AEE2B1F1CFC0063E484 /* TextureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +74,7 @@
 		237734652B1BDD0000D142FF /* learn-metal-II */ = {
 			isa = PBXGroup;
 			children = (
+				23F98AED2B1E87FE0063E484 /* Assets */,
 				23F98ADB2B1CA6DE0063E484 /* Renderer */,
 				237734662B1BDD0000D142FF /* AppDelegate.swift */,
 				237734682B1BDD0000D142FF /* GameViewController.swift */,
@@ -88,6 +95,7 @@
 				2377347C2B1BDD3E00D142FF /* ShaderDefinitions.h */,
 				2377347E2B1BDD3E00D142FF /* Shaders.metal */,
 				23F98AD92B1C01130063E484 /* Transform2D.swift */,
+				23F98AEE2B1F1CFC0063E484 /* TextureData.swift */,
 			);
 			path = Renderer;
 			sourceTree = "<group>";
@@ -98,8 +106,17 @@
 				23F98ADE2B1CB2A40063E484 /* Triangle.swift */,
 				23F98AE02B1CC18A0063E484 /* Shape.swift */,
 				23F98AE22B1CC5BA0063E484 /* Rectangle.swift */,
+				23F98AE42B1D4E9A0063E484 /* Color.swift */,
 			);
 			path = Shapes;
+			sourceTree = "<group>";
+		};
+		23F98AED2B1E87FE0063E484 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				23F98AEB2B1E87F80063E484 /* colored_packed.png */,
+			);
+			path = Assets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -160,6 +177,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23F98AEC2B1E87F80063E484 /* colored_packed.png in Resources */,
 				237734702B1BDD0100D142FF /* Assets.xcassets in Resources */,
 				237734732B1BDD0100D142FF /* Main.storyboard in Resources */,
 			);
@@ -175,6 +193,8 @@
 				237734692B1BDD0000D142FF /* GameViewController.swift in Sources */,
 				237734672B1BDD0000D142FF /* AppDelegate.swift in Sources */,
 				2377347B2B1BDD2800D142FF /* MyRenderer.swift in Sources */,
+				23F98AE52B1D4E9A0063E484 /* Color.swift in Sources */,
+				23F98AEF2B1F1CFC0063E484 /* TextureData.swift in Sources */,
 				23F98AE32B1CC5BA0063E484 /* Rectangle.swift in Sources */,
 				2377347F2B1BDD3E00D142FF /* Primitives.swift in Sources */,
 				23F98ADA2B1C01130063E484 /* Transform2D.swift in Sources */,
